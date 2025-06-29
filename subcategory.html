@@ -4,7 +4,101 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Subcategory Dashboard</title>
-    <link rel="stylesheet" href="./category.css" />
+    <link rel="stylesheet" href="global.css" />
+    <link rel="stylesheet" href="subcategory.css" />
+    <link rel="stylesheet" href="category.css" />
+    <style>
+      .grid-table {
+        display: grid;
+        grid-template-columns: 20% 20% 20% 15% 25%;
+        text-align: center;
+        padding: 1rem;
+        font-weight: bold;
+        background: #f3f4f6;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      #subcategoryTableBody .grid-row {
+        display: grid;
+        grid-template-columns: 20% 20% 20% 15% 25%;
+        padding: 1rem;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s;
+      }
+
+      #subcategoryTableBody .grid-row:hover {
+        background-color: #f9fafb;
+      }
+
+      .image-container {
+        width: 80px;
+        height: 60px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f8f8f8;
+      }
+
+      .image-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .status-badge.published {
+        background-color: #d1fae5;
+        color: #065f46;
+      }
+
+      .status-badge.draft {
+        background-color: #fee2e2;
+        color: #991b1b;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      .action-buttons button {
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: 0.2s;
+      }
+
+      .edit-btn {
+        background-color: #047857;
+        color: white;
+      }
+      .delete-btn {
+        background-color: #dc2626;
+        color: white;
+      }
+
+      .edit-btn:hover {
+        background-color: #059669;
+      }
+      .delete-btn:hover {
+        background-color: #b91c1c;
+      }
+    </style>
   </head>
   <body>
     <nav class="navbar">
@@ -18,14 +112,12 @@
             <a href="subcategory.html">Sub-Category</a>
           </li>
           <li class="nav-item">
-            <a href="#"> Products</a>
+            <a href="product.html"> Products</a>
           </li>
           <li class="nav-item">
-            <a href="#">Product Enquiry</a>
+            <a href="productenquiry.html">Product Enquiry</a>
           </li>
-          <li class="nav-item">
-            <a href="#">Manage Users</a>
-          </li>
+
           <li class="nav-item">
             <button class="logout" onclick="logout()">Logout</button>
           </li>
@@ -47,17 +139,14 @@
 
     <div class="table-container">
       <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Published</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="subcategoryTableBody"></tbody>
-        </table>
+        <div class="table-header grid-table">
+          <div>Name</div>
+          <div>Image</div>
+          <div>Category</div>
+          <div>Status</div>
+          <div>Actions</div>
+        </div>
+        <div id="subcategoryTableBody"></div>
       </div>
     </div>
 
@@ -72,50 +161,108 @@
           <input type="hidden" id="subcategoryId" />
 
           <div class="form-group">
-            <label>Name:</label>
+            <label><span class="required">*</span> Name:</label>
             <input type="text" id="name" required />
           </div>
 
           <div class="form-group">
-            <label>Description:</label>
-            <textarea id="description"></textarea>
+            <label><span class="required">*</span> Description:</label>
+            <div
+              contenteditable="true"
+              id="description"
+              class="contenteditable-field"
+              placeholder="Subcategory description"
+              style="border: 1px solid #ccc; padding: 5px; min-height: 100px"
+              required
+            ></div>
           </div>
 
           <div class="form-group">
-            <label>Image Path (URL):</label>
-            <input type="text" id="imagepath" />
+            <label><span class="required">*</span> Image Path (URL):</label>
+            <input
+              type="text"
+              id="imagepath"
+              placeholder="Paste image URL"
+              oninput="previewSubcategoryImage()"
+              required
+            />
+            <img
+              id="subImagePreview"
+              src=""
+              alt="Preview"
+              class="image-preview"
+              style="display: none"
+            />
           </div>
 
           <div class="form-group">
-            <label>Meta Title:</label>
-            <input type="text" id="metatitle" />
+            <label><span class="required">*</span> Meta Title:</label>
+            <input type="text" id="metatitle" required />
           </div>
 
           <div class="form-group">
-            <label>Meta Description:</label>
-            <textarea id="metadescription"></textarea>
+            <label><span class="required">*</span> Meta Description:</label>
+            <textarea id="metadescription" required></textarea>
           </div>
 
           <div class="form-group">
-            <label>SEO Keywords:</label>
-            <input type="text" id="seokeywords" />
+            <label><span class="required">*</span> SEO Keywords:</label>
+            <input type="text" id="seokeywords" required />
           </div>
 
           <div class="form-group">
-            <label>Publish Status:</label>
-            <label
-              ><input type="radio" name="ispublished" value="true" checked />
-              Publish</label
+            <label><span class="required">*</span> Publish Status:</label>
+            <label>
+              <input
+                type="radio"
+                name="ispublished"
+                value="true"
+                checked
+                required
+              />
+              Publish
+            </label>
+            <label>
+              <input type="radio" name="ispublished" value="false" required />
+              Draft
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label><span class="required">*</span> Select Categories:</label>
+            <div
+              class="custom-multi-select"
+              onclick="toggleDropdown()"
+              style="position: relative"
             >
-            <label
-              ><input type="radio" name="ispublished" value="false" />
-              Draft</label
-            >
-          </div>
-
-          <div class="form-group">
-            <label>Select Category:</label>
-            <select id="categorySelect" required></select>
+              <div
+                id="selectedCategories"
+                class="selected-tags"
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 5px;
+                  min-height: 38px;
+                  border: 1px solid #ccc;
+                  padding: 5px;
+                  cursor: text;
+                "
+              ></div>
+              <div
+                id="dropdownList"
+                class="dropdown-list"
+                style="
+                  display: none;
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  width: 100%;
+                  background: white;
+                  border: 1px solid #ccc;
+                  z-index: 10;
+                "
+              ></div>
+            </div>
           </div>
 
           <div class="form-buttons">
@@ -134,128 +281,6 @@
 
     <script src="./Logout.js"></script>
 
-    <script>
-      const baseUrl = "http://localhost:8080/subcategories";
-      const categoryUrl = "http://localhost:8080/categories";
-
-      window.onload = () => {
-        getAllSubcategories();
-        loadCategories();
-      };
-
-      async function getAllSubcategories() {
-        const res = await fetch(baseUrl);
-        const data = await res.json();
-        document.getElementById(
-          "subcategoryCount"
-        ).textContent = `Total Subcategories: ${data.length}`;
-        const tableBody = document.getElementById("subcategoryTableBody");
-        tableBody.innerHTML = "";
-        data.forEach((sub) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-          <td>${sub.name}</td>
-          <td>${sub.category?.name || "N/A"}</td>
-          <td>${sub.ispublished ? "Yes" : "No"}</td>
-          <td>
-           <button class="edit-btn" data-sub='${encodeURIComponent(
-             JSON.stringify(sub)
-           )}' onclick="handleEditClick(this)"> Edit </button>
-
-            <button class="delete-btn" onclick="deleteSubcategory(${
-              sub.id
-            })">Delete</button>
-          </td>
-        `;
-          tableBody.appendChild(row);
-        });
-      }
-      function handleEditClick(button) {
-        const encoded = button.getAttribute("data-sub");
-        const decoded = decodeURIComponent(encoded);
-        const sub = JSON.parse(decoded);
-        editSubcategory(sub);
-      }
-
-      function openAddModal() {
-        document.getElementById("addModal").style.display = "flex";
-        document.getElementById("addForm").reset();
-        document.getElementById("subcategoryId").value = "";
-        document.getElementById("formTitle").innerText = "Add Subcategory";
-      }
-
-      function closeAddModal() {
-        document.getElementById("addModal").style.display = "none";
-        document.getElementById("addForm").reset();
-      }
-
-      async function loadCategories() {
-        const res = await fetch(categoryUrl);
-        const categories = await res.json();
-        const select = document.getElementById("categorySelect");
-        select.innerHTML = categories
-          .map((cat) => `<option value="${cat.id}">${cat.name}</option>`)
-          .join("");
-      }
-
-      document
-        .getElementById("addForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-          const id = document.getElementById("subcategoryId").value;
-          const subcategory = {
-            name: document.getElementById("name").value,
-            description: document.getElementById("description").value,
-            imagepath: document.getElementById("imagepath").value,
-            metatitle: document.getElementById("metatitle").value,
-            metadescription: document.getElementById("metadescription").value,
-            seokeywords: document.getElementById("seokeywords").value,
-            ispublished:
-              document.querySelector('input[name="ispublished"]:checked')
-                .value === "true",
-            category: {
-              id: parseInt(document.getElementById("categorySelect").value),
-            },
-          };
-
-          const method = id ? "PUT" : "POST";
-          const url = id ? `${baseUrl}/${id}` : baseUrl;
-
-          console.log("Submitting:", JSON.stringify(subcategory, null, 2));
-
-          await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(subcategory),
-          });
-
-          closeAddModal();
-          getAllSubcategories();
-        });
-
-      function editSubcategory(sub) {
-        document.getElementById("subcategoryId").value = sub.id;
-        document.getElementById("name").value = sub.name;
-        document.getElementById("description").value = sub.description;
-        document.getElementById("imagepath").value = sub.imagepath;
-        document.getElementById("metatitle").value = sub.metatitle;
-        document.getElementById("metadescription").value = sub.metadescription;
-        document.getElementById("seokeywords").value = sub.seokeywords;
-        document.querySelector(
-          `input[name="ispublished"][value="${sub.ispublished}"]`
-        ).checked = true;
-        document.getElementById("categorySelect").value =
-          sub.category?.id || "";
-        document.getElementById("formTitle").innerText = "Edit Subcategory";
-        document.getElementById("addModal").style.display = "flex";
-      }
-
-      async function deleteSubcategory(id) {
-        if (!confirm("Are you sure you want to delete this subcategory?"))
-          return;
-        await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
-        getAllSubcategories();
-      }
-    </script>
+    <script src="./subcategory.js"></script>
   </body>
 </html>
