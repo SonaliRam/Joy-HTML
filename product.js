@@ -47,11 +47,22 @@ function closeAddProductModal() {
 function previewMainImage() {
   const url = document.getElementById("mainImage").value;
   const img = document.getElementById("mainImagePreview");
+
   if (url && url !== "undefined") {
     img.src = url;
-    img.style.display = "block";
+    img.style.display = "inline";
+    img.style.width = "200px"; // ✅ set width
+    img.style.height = "150px"; // ✅ set height
+    img.style.objectFit = "cover"; // optional: to avoid distortion
   } else {
     img.style.display = "none";
+  }
+}
+
+function showProductCount(count) {
+  const countElement = document.getElementById("productCount");
+  if (countElement) {
+    countElement.textContent = `Total Products: ${count}`;
   }
 }
 
@@ -65,6 +76,7 @@ function addVariantRow() {
       <option value="Color">Color</option>
       <option value="Size">Size</option>
       <option value="Material">Material</option>
+      <option value="Others">Others</option>
     </select>
     <input type="text" placeholder="Enter option values comma-separated" required />
   `;
@@ -172,13 +184,15 @@ function resetSubcategorySelector() {
 async function handleAddProductSubmit(e) {
   e.preventDefault();
 
-  const variants = Array.from(
-    document.querySelectorAll("#variantsContainer .variantRow")
-  ).map((row) => {
-    const select = row.querySelector("select").value;
-    const values = row.querySelector("input").value;
-    return { optionName: select, optionValues: values };
-  });
+  const variantsMap = Object.fromEntries(
+    Array.from(document.querySelectorAll("#variantsContainer .variantRow")).map(
+      (row) => {
+        const optionName = row.querySelector("select").value.trim();
+        const optionValues = row.querySelector("input").value.trim();
+        return [optionName, optionValues];
+      }
+    )
+  );
 
   const colorImages = Object.fromEntries(
     Array.from(
@@ -210,7 +224,8 @@ async function handleAddProductSubmit(e) {
       console.log("📤 Submitting ispublished (raw radio):", value); // ✅
       return value === "true";
     })(),
-    variation: variants.length > 0 ? "true" : "false",
+    variation: Object.keys(variantsMap).length > 0 ? "true" : "false",
+    variantsMap: variantsMap,
     colorimages: colorImages,
     subcategories: selectedSubcategoryIds.map((id) => ({ id })),
   };
@@ -232,63 +247,12 @@ async function handleAddProductSubmit(e) {
   closeAddProductModal();
 }
 
-// async function loadProducts() {
-//   try {
-//     const res = await fetch(baseUrl);
-//     if (!res.ok) throw new Error("Failed to load products");
-//     const data = await res.json();
-
-//     const tbody = document.getElementById("productTableBody");
-//     tbody.innerHTML = "";
-
-//     data.forEach((product) => {
-//       const tr = document.createElement("tr");
-
-//       const statusBadge = product.ispublished
-//         ? `<span class="status-badge done">Published</span>`
-//         : `<span class="status-badge not-done">Draft</span>`;
-
-//       const subcategories = product.subcategories
-//         .map((sub) => sub.name)
-//         .join(", ");
-
-//       const categoriesSet = new Set();
-//       product.subcategories.forEach((sub) => {
-//         sub.categories?.forEach((cat) => categoriesSet.add(cat.name));
-//       });
-
-//       const categories = Array.from(categoriesSet).join(", ");
-
-//       tr.innerHTML = `
-//         <td>${product.name}</td>
-//         <td><img src="${
-//           product.mainimage || ""
-//         }" alt="Product Image" onerror="this.style.display='none'"/></td>
-//         <td>${categories || "-"}</td>
-//         <td>${subcategories || "-"}</td>
-//         <td>${statusBadge}</td>
-//         <td>
-//           <button class="action-btn edit-btn" onclick="editProduct(${
-//             product.id
-//           })">Edit</button>
-//           <button class="action-btn delete-btn" onclick="deleteProduct(${
-//             product.id
-//           })">Delete</button>
-//         </td>
-//       `;
-
-//       tbody.appendChild(tr);
-//     });
-//   } catch (err) {
-//     console.error("Error loading products:", err);
-//   }
-// }
 async function loadProducts() {
   try {
     const res = await fetch(baseUrl);
     if (!res.ok) throw new Error("Failed to load products");
     const data = await res.json();
-
+    showProductCount(data.length);
     const tbody = document.getElementById("productTableBody");
     tbody.innerHTML = "";
 
@@ -325,9 +289,10 @@ async function loadProducts() {
         <td>${subcategories || "-"}</td>
         <td>${statusBadge}</td>
         <td>
+        <a href="addproductmodel.html" style="text-decoration: none; color: white;">
           <button class="action-btn edit-btn" onclick="editProduct(${
             product.id
-          })">Edit</button>
+          })"> Edit</button></a>
           <button class="action-btn delete-btn" onclick="deleteProduct(${
             product.id
           })">Delete</button>
@@ -361,6 +326,8 @@ async function loadProducts() {
 }
 
 async function editProduct(id) {
+  // ✅ Redirect to form page with the product ID in the URL
+  window.location.href = `addproductmodel.html?id=${id}`;
   try {
     const res = await fetch(`${baseUrl}/${id}`);
     if (!res.ok) throw new Error("Failed to fetch product");
@@ -391,27 +358,32 @@ async function editProduct(id) {
     );
 
     document.getElementById("variantsContainer").innerHTML = "";
-    if (product.variation === "true" && product.variants) {
-      product.variants.forEach((variant) => {
-        const div = document.createElement("div");
-        div.classList.add("variantRow");
-        div.innerHTML = `
-          <select required>
-          <option value="">Select Option Name</option>
-          <option value="Color" ${
-            variant.optionName === "Color" ? "selected" : ""
-          }>Color</option>
-            <option value="Size" ${
-              variant.optionName === "Size" ? "selected" : ""
-            }>Size</option>
-            <option value="Material" ${
-              variant.optionName === "Material" ? "selected" : ""
-            }>Material</option>
-            </select>
-            <input type="text" value="${variant.optionValues}" required />
-            `;
-        document.getElementById("variantsContainer").appendChild(div);
-      });
+    if (product.variation === "true" && product.variantsMap) {
+      Object.entries(product.variantsMap).forEach(
+        ([optionName, optionValues]) => {
+          const div = document.createElement("div");
+          div.classList.add("variantRow");
+          div.innerHTML = `
+      <select required>
+        <option value="">Select Option Name</option>
+        <option value="Color" ${
+          optionName === "Color" ? "selected" : ""
+        }>Color</option>
+        <option value="Size" ${
+          optionName === "Size" ? "selected" : ""
+        }>Size</option>
+        <option value="Material" ${
+          optionName === "Material" ? "selected" : ""
+        }>Material</option>
+        <option value="Others" ${
+          optionName === "Others" ? "selected" : ""
+        }>Others</option>
+      </select>
+      <input type="text" value="${optionValues}" required />
+    `;
+          document.getElementById("variantsContainer").appendChild(div);
+        }
+      );
     }
 
     document.getElementById("colorImageContainer").innerHTML = "";

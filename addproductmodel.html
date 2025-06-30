@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="product.css" />
+    <title>Add Products</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <style>
+      .required {
+        color: red;
+      }
+
+      #addProductModal {
+        display: block;
+        background: transparent;
+        max-width: 900px;
+        margin: 2rem auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      #addProductModal .modal-content {
+        background: var(--secondary-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+      }
+
+      #addProductForm {
+        padding: 0;
+      }
+
+      #addProductForm .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      #addProductForm label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      #addProductForm input,
+      #addProductForm textarea {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 14px;
+        color: var(--text-primary);
+        background: var(--secondary-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+      }
+
+      #addProductForm input:focus,
+      #addProductForm textarea:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      #productDescriptionEditor {
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        min-height: 120px;
+        background: var(--secondary-bg);
+        padding: 0.75rem;
+        overflow-y: auto;
+      }
+      #mainImage {
+        display: inline;
+        width: 50%;
+      }
+      #mainImagePreview {
+        width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+        margin-top: 10px;
+        border: 1px solid #ccc;
+        border-radius: var(--border-radius);
+        display: none;
+      }
+
+      #variantsContainer {
+        margin-bottom: 1rem;
+      }
+
+      #colorImageContainer {
+        margin-top: 1rem;
+      }
+
+      #subcategoryDropdownList {
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 6px;
+      }
+
+      #selectedSubcategories {
+        min-height: 38px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 5px;
+        border: 1px solid #ccc;
+      }
+
+      #addProductForm .btn-primary,
+      #addProductForm .btn-secondary {
+        padding: 0.75rem 1.5rem;
+        font-size: 14px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-weight: 600;
+        transition: var(--transition);
+        border: none;
+      }
+
+      #addProductForm .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--accent-primary),
+          var(--accent-secondary)
+        );
+        color: white;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      }
+
+      #addProductForm .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      }
+
+      #addProductForm .btn-secondary {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--glass-border);
+      }
+
+      #addProductForm .btn-secondary:hover {
+        background: var(--hover-overlay);
+        color: var(--text-primary);
+        border-color: var(--accent-primary);
+      }
+
+      #addProductForm .form-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--glass-border);
+      }
+
+      /* Added styling for inline groups */
+      .form-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .form-col {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .radio-group-inline {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+      }
+
+      .radio-group-inline label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="Dashboard.html" class="logo">AdminPanel</a>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="Category.html">Category</a>
+          </li>
+          <li class="nav-item">
+            <a href="subcategory.html">Sub-Category</a>
+          </li>
+          <li class="nav-item">
+            <a href="product.html"> Products</a>
+          </li>
+          <li class="nav-item">
+            <a href="productenquiry.html">Product Enquiry</a>
+          </li>
+          <li class="nav-item">
+            <button class="logout" onclick="logout()">Logout</button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <div class="top-bar container">
+      <h1 class="headings">Products</h1>
+      <div class="top-controls">
+        <a href="product.html" style="text-decoration: none; color: white">
+          <button id="openAddProductModal" class="add-btn">
+            Go Back To Product Model
+          </button>
+        </a>
+      </div>
+    </div>
+    <div id="addProductModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="headings" style="margin-bottom: 20px">Add Product</h2>
+        </div>
+
+        <form id="addProductForm" class="modal-form">
+          <div class="form-group">
+            <label><span class="required">*</span> Name:</label>
+            <input
+              type="text"
+              id="productName"
+              placeholder="Product Name"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label><span class="required">*</span> Description:</label>
+            <div id="productDescriptionEditor" style="height: 150px"></div>
+          </div>
+
+          <div class="form-group">
+            <label><span class="required">*</span> Main Image URL:</label>
+            <input
+              type="url"
+              id="mainImage"
+              placeholder="Paste image URL"
+              required
+              oninput="previewMainImage()"
+            />
+            <img
+              id="mainImagePreview"
+              style="
+                width: 100%;
+                max-height: 200px;
+                margin: 10px 0;
+                display: none;
+              "
+            />
+          </div>
+
+          <div class="form-group">
+            <label><span class="required">*</span> Variants:</label>
+            <div id="variantsContainer"></div>
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="addVariantRow()"
+            >
+              + Add Variant
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label
+              ><span class="required">*</span>Select Sub-Image And Their
+              Colors</label
+            >
+
+            <div
+              id="colorImageContainer"
+              style="display: none; margin-top: 10px"
+            ></div>
+
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="toggleColorImageSection()"
+            >
+              + Add Color Image
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label><span class="required">*</span> Select Subcategories:</label>
+            <div
+              class="subcategory-multi-select"
+              onclick="toggleSubcategoryDropdown()"
+              style="position: relative"
+            >
+              <div
+                id="selectedSubcategories"
+                class="selected-tags"
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 5px;
+                  min-height: 38px;
+                  border: 1px solid #ccc;
+                  padding: 5px;
+                  cursor: text;
+                "
+              ></div>
+              <div
+                id="subcategoryDropdownList"
+                class="dropdown-list"
+                style="
+                  display: none;
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  width: 100%;
+                  background: white;
+                  border: 1px solid #ccc;
+                  z-index: 10;
+                "
+              ></div>
+            </div>
+          </div>
+
+          <!-- Add Details in one row -->
+          <div class="form-group">
+            <label><span class="required">*</span> Add Details:</label>
+            <div class="form-row">
+              <div class="form-col">
+                <input
+                  type="text"
+                  id="productSize"
+                  placeholder="Size"
+                  required
+                />
+              </div>
+              <div class="form-col">
+                <input
+                  type="text"
+                  id="productFilter"
+                  placeholder="Filter"
+                  required
+                />
+              </div>
+              <div class="form-col">
+                <input
+                  type="text"
+                  id="productTags"
+                  placeholder="Product Tags"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          <!-- SCO -->
+          <div class="form-group">
+            <label><span class="required">*</span> SCO:</label>
+          </div>
+          <div class="form-group">
+            <label><span class="required">*</span> Meta Title:</label>
+            <input
+              type="text"
+              id="metaTitle"
+              placeholder="Meta Title"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label><span class="required">*</span> Page Keywords:</label>
+            <input
+              type="text"
+              id="pageKeywords"
+              placeholder="Keywords for SEO"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label><span class="required">*</span> Meta Description:</label>
+            <textarea
+              id="metaDescription"
+              placeholder="Meta Description"
+              required
+            ></textarea>
+          </div>
+          <!-- Status Inline -->
+          <div class="form-group">
+            <label><span class="required">*</span> Status:</label>
+            <div class="radio-group-inline">
+              <label
+                ><input type="radio" name="ispublished" value="true" required />
+                Published</label
+              >
+              <label
+                ><input type="radio" name="ispublished" value="false" />
+                Draft</label
+              >
+            </div>
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn-primary">Save Product</button>
+
+            <a href="product.html" style="color: black; text-decoration: none"
+              ><button
+                type="button"
+                class="btn-secondary"
+                onclick="closeAddProductModal()"
+                style="color: black"
+              >
+                Cancel
+              </button></a
+            >
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="product.js"></script>
+  </body>
+</html>
