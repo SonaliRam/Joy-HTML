@@ -232,6 +232,57 @@ async function handleAddProductSubmit(e) {
   closeAddProductModal();
 }
 
+// async function loadProducts() {
+//   try {
+//     const res = await fetch(baseUrl);
+//     if (!res.ok) throw new Error("Failed to load products");
+//     const data = await res.json();
+
+//     const tbody = document.getElementById("productTableBody");
+//     tbody.innerHTML = "";
+
+//     data.forEach((product) => {
+//       const tr = document.createElement("tr");
+
+//       const statusBadge = product.ispublished
+//         ? `<span class="status-badge done">Published</span>`
+//         : `<span class="status-badge not-done">Draft</span>`;
+
+//       const subcategories = product.subcategories
+//         .map((sub) => sub.name)
+//         .join(", ");
+
+//       const categoriesSet = new Set();
+//       product.subcategories.forEach((sub) => {
+//         sub.categories?.forEach((cat) => categoriesSet.add(cat.name));
+//       });
+
+//       const categories = Array.from(categoriesSet).join(", ");
+
+//       tr.innerHTML = `
+//         <td>${product.name}</td>
+//         <td><img src="${
+//           product.mainimage || ""
+//         }" alt="Product Image" onerror="this.style.display='none'"/></td>
+//         <td>${categories || "-"}</td>
+//         <td>${subcategories || "-"}</td>
+//         <td>${statusBadge}</td>
+//         <td>
+//           <button class="action-btn edit-btn" onclick="editProduct(${
+//             product.id
+//           })">Edit</button>
+//           <button class="action-btn delete-btn" onclick="deleteProduct(${
+//             product.id
+//           })">Delete</button>
+//         </td>
+//       `;
+
+//       tbody.appendChild(tr);
+//     });
+//   } catch (err) {
+//     console.error("Error loading products:", err);
+//   }
+// }
 async function loadProducts() {
   try {
     const res = await fetch(baseUrl);
@@ -261,9 +312,15 @@ async function loadProducts() {
 
       tr.innerHTML = `
         <td>${product.name}</td>
-        <td><img src="${
-          product.mainimage || ""
-        }" alt="Product Image" onerror="this.style.display='none'"/></td>
+        <td class="cell-image">
+          <div class="image-container">
+            <img src="${product.mainimage || ""}"
+                 alt="Product Image"
+                 loading="lazy"
+                 onerror="this.onerror=null;this.src='https://dummyimage.com/100x100/cccccc/000000&text=No+Image';">
+            <div class="image-loader"></div>
+          </div>
+        </td>
         <td>${categories || "-"}</td>
         <td>${subcategories || "-"}</td>
         <td>${statusBadge}</td>
@@ -278,6 +335,25 @@ async function loadProducts() {
       `;
 
       tbody.appendChild(tr);
+
+      // Add image loading effect just like category
+      const img = tr.querySelector(".image-container img");
+      const container = tr.querySelector(".image-container");
+      container.classList.add("loading");
+
+      if (img.complete) {
+        img.classList.add("loaded");
+        container.classList.remove("loading");
+      } else {
+        img.addEventListener("load", () => {
+          img.classList.add("loaded");
+          container.classList.remove("loading");
+        });
+        img.addEventListener("error", () => {
+          img.classList.add("loaded");
+          container.classList.remove("loading");
+        });
+      }
     });
   } catch (err) {
     console.error("Error loading products:", err);
@@ -288,10 +364,10 @@ async function editProduct(id) {
   try {
     const res = await fetch(`${baseUrl}/${id}`);
     if (!res.ok) throw new Error("Failed to fetch product");
-    
+
     const product = await res.json();
     console.log("🛠 Edit mode: ispublished from backend →", product.ispublished); // ✅
-    
+
     document.getElementById("productName").value = product.name;
     document.getElementById("productSize").value = product.size;
     document.getElementById("mainImage").value =
@@ -299,32 +375,32 @@ async function editProduct(id) {
     previewMainImage();
     document.getElementById("productFilter").value = product.filter || "";
     document.getElementById("productTags").value =
-    product.producttags?.join(", ") || "";
+      product.producttags?.join(", ") || "";
     document.getElementById("metaTitle").value = product.metatitle;
     document.getElementById("metaDescription").value = product.metadescription;
     document.getElementById("pageKeywords").value = product.pagekeywords;
-    
+
     document.querySelector(
       `input[name="ispublished"][value="${product.ispublished}"]`
     ).checked = true;
-    
+
     quill.root.innerHTML = product.description || "";
     resetSubcategorySelector();
     product.subcategories?.forEach((sub) =>
       selectSubcategory(sub.id, sub.name)
-  );
-  
-  document.getElementById("variantsContainer").innerHTML = "";
-  if (product.variation === "true" && product.variants) {
-    product.variants.forEach((variant) => {
-      const div = document.createElement("div");
-      div.classList.add("variantRow");
-      div.innerHTML = `
+    );
+
+    document.getElementById("variantsContainer").innerHTML = "";
+    if (product.variation === "true" && product.variants) {
+      product.variants.forEach((variant) => {
+        const div = document.createElement("div");
+        div.classList.add("variantRow");
+        div.innerHTML = `
           <select required>
           <option value="">Select Option Name</option>
           <option value="Color" ${
             variant.optionName === "Color" ? "selected" : ""
-            }>Color</option>
+          }>Color</option>
             <option value="Size" ${
               variant.optionName === "Size" ? "selected" : ""
             }>Size</option>
@@ -334,10 +410,10 @@ async function editProduct(id) {
             </select>
             <input type="text" value="${variant.optionValues}" required />
             `;
-            document.getElementById("variantsContainer").appendChild(div);
-          });
-        }
-        
+        document.getElementById("variantsContainer").appendChild(div);
+      });
+    }
+
     document.getElementById("colorImageContainer").innerHTML = "";
     if (product.colorimages) {
       document.getElementById("colorImageContainer").style.display = "block";
@@ -360,10 +436,10 @@ async function editProduct(id) {
         });
       });
     }
-    
+
     document
-    .getElementById("addProductForm")
-    .setAttribute("data-id", product.id);
+      .getElementById("addProductForm")
+      .setAttribute("data-id", product.id);
     openAddProductModal();
   } catch (err) {
     console.error("Error editing product:", err);

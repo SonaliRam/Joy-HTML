@@ -3,7 +3,7 @@
 /* ! starts table design  */
 /* Container Centering */
 .table-container {
-  max-width: 88%;
+  max-width: 95%;
   margin: 2rem auto;
   padding: 1.5rem;
   background: white;
@@ -153,6 +153,10 @@ tbody tr:hover td {
   background-color: #059669;
   box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
 }
+.delete-btn:hover {
+  background-color: #b91c1c;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+}
 
 .delete-btn {
   background-color: #ef4444;
@@ -160,10 +164,6 @@ tbody tr:hover td {
   background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
 }
 
-.delete-btn:hover {
-  background-color: #b91c1c;
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
-}
 
 /* Responsive */
 @media (max-width: 768px) {
