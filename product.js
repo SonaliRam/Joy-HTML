@@ -5,28 +5,67 @@ let allSubcategories = [];
 let selectedSubcategoryIds = [];
 let quill;
 
+// window.onload = () => {
+//   loadSubcategories();
+//   document.addEventListener("click", handleOutsideClick);
+//   document.getElementById("openAddProductModal").onclick = openAddProductModal;
+//   document
+//     .getElementById("addProductForm")
+//     .addEventListener("submit", handleAddProductSubmit);
+
+//   // Initialize Quill for rich description
+//   quill = new Quill("#productDescriptionEditor", {
+//     theme: "snow",
+//     placeholder: "Write product description...",
+//     modules: {
+//       toolbar: [
+//         [{ header: [1, 2, false] }],
+//         ["bold", "italic", "underline"],
+//         [{ list: "ordered" }, { list: "bullet" }],
+//         [{ align: [] }],
+//         ["clean"],
+//       ],
+//     },
+//   });
+// };
 window.onload = () => {
+  // Common initialization for all pages
   loadSubcategories();
   document.addEventListener("click", handleOutsideClick);
-  document.getElementById("openAddProductModal").onclick = openAddProductModal;
-  document
-    .getElementById("addProductForm")
-    .addEventListener("submit", handleAddProductSubmit);
 
-  // Initialize Quill for rich description
-  quill = new Quill("#productDescriptionEditor", {
-    theme: "snow",
-    placeholder: "Write product description...",
-    modules: {
-      toolbar: [
-        [{ header: [1, 2, false] }],
-        ["bold", "italic", "underline"],
-        [{ list: "ordered" }, { list: "bullet" }],
-        [{ align: [] }],
-        ["clean"],
-      ],
-    },
-  });
+  // Only initialize these if we're on product.html
+  if (document.getElementById("openAddProductModal")) {
+    document.getElementById("openAddProductModal").onclick =
+      openAddProductModal;
+  }
+
+  // Only initialize Quill and form if we're on addproductmodel.html
+  if (document.getElementById("productDescriptionEditor")) {
+    quill = new Quill("#productDescriptionEditor", {
+      theme: "snow",
+      placeholder: "Write product description...",
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, false] }],
+          ["bold", "italic", "underline"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          [{ align: [] }],
+          ["clean"],
+        ],
+      },
+    });
+  }
+
+  if (document.getElementById("addProductForm")) {
+    document
+      .getElementById("addProductForm")
+      .addEventListener("submit", handleAddProductSubmit);
+  }
+
+  // Always load products if we're on product.html
+  if (document.getElementById("productTableBody")) {
+    loadProducts();
+  }
 };
 
 function openAddProductModal() {
@@ -123,34 +162,63 @@ function toggleSubcategoryDropdown() {
     dropdown.style.display === "block" ? "none" : "block";
 }
 
+// function handleOutsideClick(e) {
+//   const dropdown = document.getElementById("subcategoryDropdownList");
+//   const customSelect = document.querySelector(".subcategory-multi-select");
+//   if (!customSelect.contains(e.target)) {
+//     dropdown.style.display = "none";
+//   }
+// }
 function handleOutsideClick(e) {
   const dropdown = document.getElementById("subcategoryDropdownList");
   const customSelect = document.querySelector(".subcategory-multi-select");
+
+  if (!dropdown || !customSelect) return;
+
   if (!customSelect.contains(e.target)) {
     dropdown.style.display = "none";
   }
 }
+// async function loadSubcategories() {
+//   try {
+//     const res = await fetch(subcategoryUrl);
+//     if (!res.ok) throw new Error("Failed to load subcategories");
+//     allSubcategories = await res.json();
+//     const dropdownList = document.getElementById("subcategoryDropdownList");
 
+//     dropdownList.innerHTML = allSubcategories
+//       .map(
+//         (sub) => `
+//           <div class="dropdown-item" data-id="${sub.id}" onclick="selectSubcategory(${sub.id}, '${sub.name}')"
+//             style="padding: 6px; cursor: pointer; border-bottom: 1px solid #eee;">${sub.name}</div>
+//         `
+//       )
+//       .join("");
+//   } catch (err) {
+//     console.error("Error loading subcategories:", err);
+//   }
+// }
 async function loadSubcategories() {
   try {
     const res = await fetch(subcategoryUrl);
     if (!res.ok) throw new Error("Failed to load subcategories");
     allSubcategories = await res.json();
-    const dropdownList = document.getElementById("subcategoryDropdownList");
 
-    dropdownList.innerHTML = allSubcategories
-      .map(
-        (sub) => `
-          <div class="dropdown-item" data-id="${sub.id}" onclick="selectSubcategory(${sub.id}, '${sub.name}')"
-            style="padding: 6px; cursor: pointer; border-bottom: 1px solid #eee;">${sub.name}</div>
-        `
-      )
-      .join("");
+    const dropdownList = document.getElementById("subcategoryDropdownList");
+    if (dropdownList) {
+      dropdownList.innerHTML = allSubcategories
+        .map(
+          (sub) => `
+            <div class="dropdown-item" data-id="${sub.id}" onclick="selectSubcategory(${sub.id}, '${sub.name}')"
+              style="padding: 6px; cursor: pointer; border-bottom: 1px solid #eee;">${sub.name}</div>
+          `
+        )
+        .join("");
+    }
   } catch (err) {
     console.error("Error loading subcategories:", err);
   }
 }
-
 function selectSubcategory(id, name) {
   if (selectedSubcategoryIds.includes(id)) return;
 
@@ -289,10 +357,10 @@ async function loadProducts() {
         <td>${subcategories || "-"}</td>
         <td>${statusBadge}</td>
         <td>
-        <a href="addproductmodel.html" style="text-decoration: none; color: white;">
+
           <button class="action-btn edit-btn" onclick="editProduct(${
             product.id
-          })"> Edit</button></a>
+          })"> Edit</button>
           <button class="action-btn delete-btn" onclick="deleteProduct(${
             product.id
           })">Delete</button>
@@ -325,99 +393,101 @@ async function loadProducts() {
   }
 }
 
-async function editProduct(id) {
-  // ✅ Redirect to form page with the product ID in the URL
+// async function editProduct(id) {
+//   // ✅ Redirect to form page with the product ID in the URL
+//   window.location.href = `addproductmodel.html?id=${id}`;
+//   try {
+//     const res = await fetch(`${baseUrl}/${id}`);
+//     if (!res.ok) throw new Error("Failed to fetch product");
+
+//     const product = await res.json();
+//     console.log("🛠 Edit mode: ispublished from backend →", product.ispublished); // ✅
+
+//     document.getElementById("productName").value = product.name;
+//     document.getElementById("productSize").value = product.size;
+//     document.getElementById("mainImage").value =
+//       product.mainImage || product.mainimage;
+//     previewMainImage();
+//     document.getElementById("productFilter").value = product.filter || "";
+//     document.getElementById("productTags").value =
+//       product.producttags?.join(", ") || "";
+//     document.getElementById("metaTitle").value = product.metatitle;
+//     document.getElementById("metaDescription").value = product.metadescription;
+//     document.getElementById("pageKeywords").value = product.pagekeywords;
+
+//     document.querySelector(
+//       `input[name="ispublished"][value="${product.ispublished}"]`
+//     ).checked = true;
+
+//     quill.root.innerHTML = product.description || "";
+//     resetSubcategorySelector();
+//     product.subcategories?.forEach((sub) =>
+//       selectSubcategory(sub.id, sub.name)
+//     );
+
+//     document.getElementById("variantsContainer").innerHTML = "";
+//     if (product.variation === "true" && product.variantsMap) {
+//       Object.entries(product.variantsMap).forEach(
+//         ([optionName, optionValues]) => {
+//           const div = document.createElement("div");
+//           div.classList.add("variantRow");
+//           div.innerHTML = `
+//       <select required>
+//         <option value="">Select Option Name</option>
+//         <option value="Color" ${
+//           optionName === "Color" ? "selected" : ""
+//         }>Color</option>
+//         <option value="Size" ${
+//           optionName === "Size" ? "selected" : ""
+//         }>Size</option>
+//         <option value="Material" ${
+//           optionName === "Material" ? "selected" : ""
+//         }>Material</option>
+//         <option value="Others" ${
+//           optionName === "Others" ? "selected" : ""
+//         }>Others</option>
+//       </select>
+//       <input type="text" value="${optionValues}" required />
+//     `;
+//           document.getElementById("variantsContainer").appendChild(div);
+//         }
+//       );
+//     }
+
+//     document.getElementById("colorImageContainer").innerHTML = "";
+//     if (product.colorimages) {
+//       document.getElementById("colorImageContainer").style.display = "block";
+//       Object.entries(product.colorimages).forEach(([color, url]) => {
+//         const row = document.createElement("div");
+//         row.className = "colorImageRow";
+//         const colorInputId = `colorInput-${Date.now()}`;
+//         row.innerHTML = `
+//           <div style="display: flex; align-items: center; gap: 6px;">
+//             <input type="color" id="${colorInputId}" value="${color}" required style="width: 30px; height: 30px; border: none;" />
+//             <span id="${colorInputId}-code" style="font-size: 14px;">${color}</span>
+//           </div>
+//           <input type="url" value="${url}" required class="input-field" style="flex: 1;" />
+//         `;
+//         document.getElementById("colorImageContainer").appendChild(row);
+//         const colorInput = document.getElementById(colorInputId);
+//         const colorCode = document.getElementById(`${colorInputId}-code`);
+//         colorInput.addEventListener("input", () => {
+//           colorCode.textContent = colorInput.value;
+//         });
+//       });
+//     }
+
+//     document
+//       .getElementById("addProductForm")
+//       .setAttribute("data-id", product.id);
+//     openAddProductModal();
+//   } catch (err) {
+//     console.error("Error editing product:", err);
+//   }
+// }
+function editProduct(id) {
   window.location.href = `addproductmodel.html?id=${id}`;
-  try {
-    const res = await fetch(`${baseUrl}/${id}`);
-    if (!res.ok) throw new Error("Failed to fetch product");
-
-    const product = await res.json();
-    console.log("🛠 Edit mode: ispublished from backend →", product.ispublished); // ✅
-
-    document.getElementById("productName").value = product.name;
-    document.getElementById("productSize").value = product.size;
-    document.getElementById("mainImage").value =
-      product.mainImage || product.mainimage;
-    previewMainImage();
-    document.getElementById("productFilter").value = product.filter || "";
-    document.getElementById("productTags").value =
-      product.producttags?.join(", ") || "";
-    document.getElementById("metaTitle").value = product.metatitle;
-    document.getElementById("metaDescription").value = product.metadescription;
-    document.getElementById("pageKeywords").value = product.pagekeywords;
-
-    document.querySelector(
-      `input[name="ispublished"][value="${product.ispublished}"]`
-    ).checked = true;
-
-    quill.root.innerHTML = product.description || "";
-    resetSubcategorySelector();
-    product.subcategories?.forEach((sub) =>
-      selectSubcategory(sub.id, sub.name)
-    );
-
-    document.getElementById("variantsContainer").innerHTML = "";
-    if (product.variation === "true" && product.variantsMap) {
-      Object.entries(product.variantsMap).forEach(
-        ([optionName, optionValues]) => {
-          const div = document.createElement("div");
-          div.classList.add("variantRow");
-          div.innerHTML = `
-      <select required>
-        <option value="">Select Option Name</option>
-        <option value="Color" ${
-          optionName === "Color" ? "selected" : ""
-        }>Color</option>
-        <option value="Size" ${
-          optionName === "Size" ? "selected" : ""
-        }>Size</option>
-        <option value="Material" ${
-          optionName === "Material" ? "selected" : ""
-        }>Material</option>
-        <option value="Others" ${
-          optionName === "Others" ? "selected" : ""
-        }>Others</option>
-      </select>
-      <input type="text" value="${optionValues}" required />
-    `;
-          document.getElementById("variantsContainer").appendChild(div);
-        }
-      );
-    }
-
-    document.getElementById("colorImageContainer").innerHTML = "";
-    if (product.colorimages) {
-      document.getElementById("colorImageContainer").style.display = "block";
-      Object.entries(product.colorimages).forEach(([color, url]) => {
-        const row = document.createElement("div");
-        row.className = "colorImageRow";
-        const colorInputId = `colorInput-${Date.now()}`;
-        row.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="color" id="${colorInputId}" value="${color}" required style="width: 30px; height: 30px; border: none;" />
-            <span id="${colorInputId}-code" style="font-size: 14px;">${color}</span>
-          </div>
-          <input type="url" value="${url}" required class="input-field" style="flex: 1;" />
-        `;
-        document.getElementById("colorImageContainer").appendChild(row);
-        const colorInput = document.getElementById(colorInputId);
-        const colorCode = document.getElementById(`${colorInputId}-code`);
-        colorInput.addEventListener("input", () => {
-          colorCode.textContent = colorInput.value;
-        });
-      });
-    }
-
-    document
-      .getElementById("addProductForm")
-      .setAttribute("data-id", product.id);
-    openAddProductModal();
-  } catch (err) {
-    console.error("Error editing product:", err);
-  }
 }
-
 async function deleteProduct(id) {
   if (!confirm("Are you sure you want to delete this product?")) return;
 

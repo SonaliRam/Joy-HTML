@@ -181,6 +181,7 @@
         margin: 0;
       }
     </style>
+    <script src="product.js" defer></script>
   </head>
   <body>
     <nav class="navbar">
@@ -418,6 +419,405 @@
         </form>
       </div>
     </div>
-    <script src="product.js"></script>
+
+    <!-- <script>
+      // Initialize Quill first
+      const quill = new Quill("#productDescriptionEditor", {
+        theme: "snow",
+        placeholder: "Write product description...",
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, false] }],
+            ["bold", "italic", "underline"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            [{ align: [] }],
+            ["clean"],
+          ],
+        },
+      });
+
+      window.onload = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get("id");
+
+        if (productId) {
+          try {
+            const res = await fetch(
+              `http://localhost:8080/products/${productId}`
+            );
+            if (!res.ok) {
+              console.error("❌ Backend returned status:", res.status);
+              throw new Error("Failed to fetch product data");
+            }
+
+            const product = await res.json();
+            console.log("✅ Loaded product:", product);
+
+            // Fill form fields
+            document.getElementById("productName").value = product.name || "";
+            document.getElementById("productSize").value = product.size || "";
+            document.getElementById("mainImage").value =
+              product.mainimage || "";
+            previewMainImage();
+            document.getElementById("productFilter").value =
+              product.filter || "";
+            document.getElementById("productTags").value =
+              product.producttags?.join(", ") || "";
+            document.getElementById("metaTitle").value =
+              product.metatitle || "";
+            document.getElementById("metaDescription").value =
+              product.metadescription || "";
+            document.getElementById("pageKeywords").value =
+              product.pagekeywords || "";
+
+            // Set published status
+            // ✅ Set published status safely
+            console.log("🧪 Checking ispublished:", product.ispublished);
+
+            const publishRadio = document.querySelector(
+              `input[name="ispublished"][value="${product.ispublished}"]`
+            );
+
+            if (publishRadio) {
+              publishRadio.checked = true;
+            } else {
+              console.warn(
+                "⚠️ No radio button matches ispublished:",
+                product.ispublished
+              );
+            }
+
+            // Set description in Quill
+            quill.root.innerHTML = product.description || "";
+
+            // Handle subcategories
+            resetSubcategorySelector();
+            product.subcategories?.forEach((sub) =>
+              selectSubcategory(sub.id, sub.name)
+            );
+
+            // Handle variants
+            document.getElementById("variantsContainer").innerHTML = "";
+            if (product.variantsMap) {
+              Object.entries(product.variantsMap).forEach(
+                ([optionName, optionValues]) => {
+                  const div = document.createElement("div");
+                  div.classList.add("variantRow");
+                  div.innerHTML = `
+                <select required>
+                  <option value="">Select Option Name</option>
+                  <option value="Color" ${
+                    optionName === "Color" ? "selected" : ""
+                  }>Color</option>
+                  <option value="Size" ${
+                    optionName === "Size" ? "selected" : ""
+                  }>Size</option>
+                  <option value="Material" ${
+                    optionName === "Material" ? "selected" : ""
+                  }>Material</option>
+                  <option value="Others" ${
+                    optionName === "Others" ? "selected" : ""
+                  }>Others</option>
+                </select>
+                <input type="text" value="${optionValues}" required />
+              `;
+                  document.getElementById("variantsContainer").appendChild(div);
+                }
+              );
+            }
+
+            // Handle color images
+            const colorContainer = document.getElementById(
+              "colorImageContainer"
+            );
+            colorContainer.innerHTML = "";
+            if (
+              product.colorimages &&
+              Object.keys(product.colorimages).length > 0
+            ) {
+              colorContainer.style.display = "block";
+              Object.entries(product.colorimages).forEach(([color, url]) => {
+                const colorInputId = `colorInput-${Date.now()}`;
+                const row = document.createElement("div");
+                row.className = "colorImageRow";
+                row.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="color" id="${colorInputId}" value="${color}" required 
+                  style="width: 30px; height: 30px; border: none;" />
+                <span id="${colorInputId}-code" style="font-size: 14px;">${color}</span>
+              </div>
+              <input type="url" value="${url}" required class="input-field" style="flex: 1;" />
+            `;
+                colorContainer.appendChild(row);
+
+                const colorInput = document.getElementById(colorInputId);
+                const colorCode = document.getElementById(
+                  `${colorInputId}-code`
+                );
+                colorInput.addEventListener("input", () => {
+                  colorCode.textContent = colorInput.value;
+                });
+              });
+            }
+
+            document
+              .getElementById("addProductForm")
+              .setAttribute("data-id", productId);
+            document
+              .getElementById("addProductForm")
+              .addEventListener("submit", handleAddProductSubmit);
+          } catch (err) {
+            console.error("❌ Error preloading product:", err);
+            alert("Failed to load product. Redirecting...");
+            window.location.href = "product.html";
+          }
+        }
+        // After form fields are pre-filled and data-id is set
+
+        // Load subcategories
+        loadSubcategories();
+      };
+
+      // Add these functions to handle subcategories
+      async function loadSubcategories() {
+        try {
+          const res = await fetch("http://localhost:8080/subcategories");
+          if (!res.ok) throw new Error("Failed to load subcategories");
+          const allSubcategories = await res.json();
+          const dropdownList = document.getElementById(
+            "subcategoryDropdownList"
+          );
+
+          dropdownList.innerHTML = allSubcategories
+            .map(
+              (sub) => `
+            <div class="dropdown-item" data-id="${sub.id}" onclick="selectSubcategory(${sub.id}, '${sub.name}')"
+              style="padding: 6px; cursor: pointer; border-bottom: 1px solid #eee;">${sub.name}</div>
+          `
+            )
+            .join("");
+        } catch (err) {
+          console.error("Error loading subcategories:", err);
+        }
+      }
+
+      function selectSubcategory(id, name) {
+        const selectedSubcategories = document.getElementById(
+          "selectedSubcategories"
+        );
+        const existing = selectedSubcategories.querySelector(
+          `span[data-id="${id}"]`
+        );
+        if (existing) return;
+
+        const tag = document.createElement("span");
+        tag.classList.add("tag");
+        tag.style.cssText =
+          "background: #e0e0e0; padding: 4px 8px; margin: 2px; border-radius: 5px; display: flex; align-items: center;";
+        tag.setAttribute("data-id", id);
+        tag.innerHTML = `
+      ${name}
+      <span style="margin-left: 6px; cursor: pointer;" onclick="removeSubcategory(${id})">❌</span>
+    `;
+        selectedSubcategories.appendChild(tag);
+      }
+
+      function removeSubcategory(id) {
+        const tag = document.querySelector(
+          `#selectedSubcategories span[data-id="${id}"]`
+        );
+        if (tag) tag.remove();
+      }
+
+      function resetSubcategorySelector() {
+        document.getElementById("selectedSubcategories").innerHTML = "";
+      }
+
+      function previewMainImage() {
+        const url = document.getElementById("mainImage").value;
+        const img = document.getElementById("mainImagePreview");
+
+        if (url && url !== "undefined") {
+          img.src = url;
+          img.style.display = "inline";
+          img.style.width = "200px";
+          img.style.height = "150px";
+          img.style.objectFit = "cover";
+        } else {
+          img.style.display = "none";
+        }
+      }
+    </script> -->
+    <script>
+      // Initialize Quill only once
+      const quill = new Quill("#productDescriptionEditor", {
+        theme: "snow",
+        placeholder: "Write product description...",
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, false] }],
+            ["bold", "italic", "underline"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            [{ align: [] }],
+            ["clean"],
+          ],
+        },
+      });
+
+      async function handleAddProductSubmit(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const productId = form.getAttribute("data-id");
+
+        // Prepare product data
+        const product = {
+          name: document.getElementById("productName").value,
+          description: quill.root.innerHTML,
+          size: document.getElementById("productSize").value,
+          mainimage: document.getElementById("mainImage").value,
+          filter: document.getElementById("productFilter").value,
+          producttags: document
+            .getElementById("productTags")
+            .value.split(",")
+            .map((t) => t.trim()),
+          metatitle: document.getElementById("metaTitle").value,
+          metadescription: document.getElementById("metaDescription").value,
+          pagekeywords: document.getElementById("pageKeywords").value,
+          ispublished:
+            document.querySelector('input[name="ispublished"]:checked')
+              .value === "true",
+          variantsMap: getVariantsData(),
+          colorimages: getColorImagesData(),
+          subcategories: Array.from(
+            document.querySelectorAll("#selectedSubcategories .tag")
+          ).map((tag) => ({ id: tag.getAttribute("data-id") })),
+        };
+
+        try {
+          const response = await fetch(
+            productId
+              ? `http://localhost:8080/products/${productId}`
+              : "http://localhost:8080/products",
+            {
+              method: productId ? "PUT" : "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(product),
+            }
+          );
+
+          if (!response.ok) throw new Error("Failed to save product");
+
+          window.location.href = "product.html";
+        } catch (error) {
+          console.error("Error saving product:", error);
+          alert("Failed to save product. Please try again.");
+        }
+      }
+
+      // Helper functions
+      function getVariantsData() {
+        const variants = {};
+        document
+          .querySelectorAll("#variantsContainer .variantRow")
+          .forEach((row) => {
+            const name = row.querySelector("select").value;
+            const values = row.querySelector("input").value;
+            if (name && values) variants[name] = values;
+          });
+        return variants;
+      }
+
+      function getColorImagesData() {
+        const colorImages = {};
+        document
+          .querySelectorAll("#colorImageContainer .colorImageRow")
+          .forEach((row) => {
+            const color = row.querySelector("input[type=color]").value;
+            const url = row.querySelector("input[type=url]").value;
+            if (color && url) colorImages[color] = url;
+          });
+        return colorImages;
+      }
+
+      window.onload = async () => {
+        const form = document.getElementById("addProductForm");
+        if (form) {
+          form.removeEventListener("submit", handleAddProductSubmit);
+          form.addEventListener("submit", handleAddProductSubmit);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get("id");
+
+        if (productId) {
+          try {
+            const res = await fetch(
+              `http://localhost:8080/products/${productId}`
+            );
+            if (!res.ok) throw new Error("Failed to fetch product");
+
+            const product = await res.json();
+            console.log("✅ Loaded product:", product);
+
+            // Fill form fields
+            document.getElementById("productName").value = product.name || "";
+            document.getElementById("productSize").value = product.size || "";
+            document.getElementById("mainImage").value =
+              product.mainimage || "";
+            previewMainImage();
+            document.getElementById("productFilter").value =
+              product.filter || "";
+            document.getElementById("productTags").value =
+              product.producttags?.join(", ") || "";
+            document.getElementById("metaTitle").value =
+              product.metatitle || "";
+            document.getElementById("metaDescription").value =
+              product.metadescription || "";
+            document.getElementById("pageKeywords").value =
+              product.pagekeywords || "";
+
+            // Set published status
+            const publishRadio = document.querySelector(
+              `input[name="ispublished"][value="${product.ispublished}"]`
+            );
+            if (publishRadio) publishRadio.checked = true;
+
+            // Set description
+            quill.root.innerHTML = product.description || "";
+
+            // Set subcategories
+            resetSubcategorySelector();
+            product.subcategories?.forEach((sub) =>
+              selectSubcategory(sub.id, sub.name)
+            );
+
+            // Set variants
+            document.getElementById("variantsContainer").innerHTML = "";
+            if (product.variantsMap) {
+              Object.entries(product.variantsMap).forEach(([name, values]) => {
+                addVariantRow(name, values);
+              });
+            }
+
+            // Set color images
+            document.getElementById("colorImageContainer").innerHTML = "";
+            if (product.colorimages) {
+              Object.entries(product.colorimages).forEach(([color, url]) => {
+                addColorImageRow(color, url);
+              });
+            }
+
+            form.setAttribute("data-id", productId);
+          } catch (err) {
+            console.error("❌ Error preloading product:", err);
+            alert("Failed to load product. Redirecting...");
+            window.location.href = "product.html";
+          }
+        }
+
+        loadSubcategories();
+      };
+    </script>
   </body>
 </html>
